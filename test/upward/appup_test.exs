@@ -62,6 +62,47 @@ defmodule Upward.AppupTest do
     assert ^expected = Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path)
   end
 
+  test "v2 -> v3 with transforms" do
+    # Server changes to reference ServerC, and ServerC changes to reference ServerB,
+    # ServerB changes to no references
+    defmodule Upward.AppupTest.TransformTest do
+      def up(_app, _v1, _v2, instructions, _opts) do
+        instructions ++ [{:update, Phoenix.LiveView.Channel, {:advanced, []}, []}]
+      end
+
+      def down(_app, _v1, _v2, instructions, _opts) do
+        instructions ++ [{:update, Phoenix.LiveView.Channel, {:advanced, []}, []}]
+      end
+    end
+
+    expected =
+      {:ok,
+       {~c"0.3.0",
+        [
+          {~c"0.2.0",
+           [
+             {:update, Test.Server, {:advanced, []}, []},
+             {:update, Test.ServerB, {:advanced, []}, []},
+             {:update, Test.ServerC, {:advanced, []}, []},
+             {:update, Phoenix.LiveView.Channel, {:advanced, []}, []}
+           ]}
+        ],
+        [
+          {~c"0.2.0",
+           [
+             {:update, Test.Server, {:advanced, []}, []},
+             {:update, Test.ServerB, {:advanced, []}, []},
+             {:update, Test.ServerC, {:advanced, []}, []},
+             {:update, Phoenix.LiveView.Channel, {:advanced, []}, []}
+           ]}
+        ]}}
+
+    assert ^expected =
+             Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path, [
+               Upward.AppupTest.TransformTest
+             ])
+  end
+
   test "transforms" do
     ixs = [
       {:update, Test.Server, {:advanced, []}, []},

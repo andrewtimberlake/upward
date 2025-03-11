@@ -1,3 +1,5 @@
+Code.ensure_loaded?(:release_handler)
+
 defmodule Upward.Releases do
   @behaviour Config.Provider
 

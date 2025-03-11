@@ -1,3 +1,5 @@
+Code.ensure_loaded?(:systools)
+
 defmodule Upward.Relup do
   def make(%Mix.Release{name: app_name, version: version, path: path}, previous_version) do
     IO.puts(IO.ANSI.green() <> "* Generating relup file" <> IO.ANSI.reset())

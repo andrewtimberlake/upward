@@ -1,10 +1,13 @@
 defmodule Upward.Utils do
   def previous_release_path(paths, current_version) do
     paths
-    |> Enum.reject(&(Path.basename(&1) == current_version))
-    |> Enum.reject(&(Version.parse(Path.basename(&1)) == :error))
-    |> Enum.filter(&(Version.compare(Path.basename(&1), current_version) == :lt))
-    |> Enum.sort_by(&Path.basename(&1), :asc)
+    |> Enum.map(fn path ->
+      {parse_version(Path.basename(path)), path}
+    end)
+    |> Enum.reject(&(elem(&1, 0) == :error))
+    |> Enum.filter(&(Version.compare(elem(&1, 0), current_version) == :lt))
+    |> Enum.sort_by(&elem(&1, 0), :desc)
+    |> Enum.map(&elem(&1, 1))
     |> List.first()
   end
 
@@ -28,6 +31,15 @@ defmodule Upward.Utils do
   end
 
   def parse_version(%Version{} = version), do: version
-  def parse_version(version) when is_binary(version), do: Version.parse!(version)
-  def parse_version(version) when is_list(version), do: Version.parse!(List.to_string(version))
+
+  def parse_version(version) when is_binary(version) do
+    case Version.parse(version) do
+      {:ok, version} -> version
+      :error -> :error
+    end
+  end
+
+  def parse_version(version) when is_list(version) do
+    parse_version(List.to_string(version))
+  end
 end

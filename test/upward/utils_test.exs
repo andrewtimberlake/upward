@@ -3,33 +3,37 @@ defmodule Upward.UtilsTest do
   doctest Upward.Utils
 
   test "previous_release_path/2" do
-    current_version = "0.10.1"
+    current_version = "0.10.3"
 
     paths = [
       "releases/0.10.0",
       "releases/0.10.1",
+      "releases/0.10.2",
+      "releases/0.10.3",
       "releases/0.9.13",
       "releases/0.9.14",
       "releases/0.9.15"
     ]
 
-    assert "releases/0.10.0" = Upward.Utils.previous_release_path(paths, current_version)
+    assert "releases/0.10.2" = Upward.Utils.previous_release_path(paths, current_version)
   end
 
   test "previous_release_path/2 with invalid directory and file" do
-    current_version = "0.10.1"
+    current_version = "0.10.3"
 
     paths = [
       "data.txt",
       "releases/0.10.0",
       "releases/0.10.1",
+      "releases/0.10.2",
+      "releases/0.10.3",
       "releases/0.9.13",
       "releases/0.9.14",
       "releases/0.9.15",
       "wat"
     ]
 
-    assert "releases/0.10.0" = Upward.Utils.previous_release_path(paths, current_version)
+    assert "releases/0.10.2" = Upward.Utils.previous_release_path(paths, current_version)
   end
 
   test "patch_release?/2" do
@@ -55,5 +59,7 @@ defmodule Upward.UtilsTest do
 
     assert %Version{major: 0, minor: 10, patch: 0} =
              Upward.Utils.parse_version(%Version{major: 0, minor: 10, patch: 0})
+
+    assert :error = Upward.Utils.parse_version("0.10.0.1")
   end
 end

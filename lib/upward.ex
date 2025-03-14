@@ -52,6 +52,10 @@ defmodule Upward do
     if previous_release_path do
       previous_version = Path.basename(previous_release_path)
 
+      IO.puts(
+        IO.ANSI.yellow() <> "* upgrade from #{previous_version} to #{version}" <> IO.ANSI.reset()
+      )
+
       if Upward.Utils.patch_release?(version, previous_version) do
         previous_version_path = Path.join(path, "lib/#{app_name}-#{previous_version}")
 
@@ -94,9 +98,13 @@ defmodule Upward do
             "* not a patch release, skipping appup" <> IO.ANSI.reset()
         )
       end
+    else
+      IO.puts(
+        IO.ANSI.yellow() <>
+          "* no previous release found, skipping appup" <> IO.ANSI.reset()
+      )
     end
 
     release
   end
-
 end

@@ -32,7 +32,7 @@ defmodule Upward.Releases do
   end
 
   def make_releases(app_name, version) do
-    version = Upward.parse_version(version)
+    version = Upward.Utils.parse_version(version)
 
     {:ok, _} = Application.ensure_all_started(:sasl)
 
@@ -63,10 +63,10 @@ defmodule Upward.Releases do
 
       case result do
         {:ok, vsn} ->
-          {:ok, Upward.parse_version(vsn)}
+          {:ok, Upward.Utils.parse_version(vsn)}
 
         {:error, {:existing_release, vsn}} ->
-          {:ok, Upward.parse_version(vsn)}
+          {:ok, Upward.Utils.parse_version(vsn)}
 
         error ->
           error

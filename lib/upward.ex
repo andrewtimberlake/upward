@@ -47,15 +47,12 @@ defmodule Upward do
     previous_release_path =
       Path.wildcard(Path.join(path, "releases/*"))
       |> Enum.filter(&File.dir?/1)
-      |> Enum.reject(&(Path.basename(&1) == version))
-      |> Enum.filter(&(Version.compare(Path.basename(&1), version) == :lt))
-      |> Enum.sort_by(&Path.basename(&1), :desc)
-      |> List.first()
+      |> Upward.Utils.previous_release_path(version)
 
     if previous_release_path do
       previous_version = Path.basename(previous_release_path)
 
-      if is_patch_release?(version, previous_version) do
+      if Upward.Utils.patch_release?(version, previous_version) do
         previous_version_path = Path.join(path, "lib/#{app_name}-#{previous_version}")
 
         if File.dir?(previous_version_path) do
@@ -102,26 +99,4 @@ defmodule Upward do
     release
   end
 
-  defp is_patch_release?(
-         %Version{major: major, minor: minor},
-         %Version{major: major, minor: minor}
-       ) do
-    true
-  end
-
-  defp is_patch_release?(%Version{}, %Version{}) do
-    false
-  end
-
-  defp is_patch_release?(v1, v2) when is_binary(v1) do
-    is_patch_release?(Version.parse!(v1), v2)
-  end
-
-  defp is_patch_release?(v1, v2) when is_binary(v2) do
-    is_patch_release?(v1, Version.parse!(v2))
-  end
-
-  def parse_version(%Version{} = version), do: version
-  def parse_version(version) when is_binary(version), do: Version.parse!(version)
-  def parse_version(version) when is_list(version), do: Version.parse!(List.to_string(version))
 end

@@ -7,11 +7,15 @@ defmodule Upward do
   def upgrade(version) do
     with {:ok, version} <- Upward.Releases.set_unpacked(version),
          :ok <- Upward.Releases.install_release(version),
+         # Ensure runtime configuration is loaded
+         :ok <- Config.Provider.boot(),
          :ok <- Upward.Releases.make_permanent(version) do
       IO.puts(IO.ANSI.green() <> "Upgraded to #{version}" <> IO.ANSI.reset())
     else
       {:error, error} ->
-        IO.puts(IO.ANSI.red() <> "* Error setting unpacked: #{inspect(error)}" <> IO.ANSI.reset())
+        IO.puts(
+          IO.ANSI.red() <> "* Error installing #{version}: #{inspect(error)}" <> IO.ANSI.reset()
+        )
     end
   end
 

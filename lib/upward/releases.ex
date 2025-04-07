@@ -28,7 +28,7 @@ defmodule Upward.Releases do
   def app_name do
     {:ok, _} = Application.ensure_all_started(:sasl)
     [{name, _vsn, _, _}] = :release_handler.which_releases(:permanent)
-    to_string(name)
+    String.to_existing_atom(to_string(name))
   end
 
   def make_releases(app_name, version) do

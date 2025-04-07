@@ -5,11 +5,19 @@ defmodule Upward do
   # TODO: Maybe rename this to cover change in any version direction
   # TODO: Check that there is a relup and appup for the transition (i.e. you con’t move from 1.0.0 to 1.0.2, but need to move through 1.0.1)
   def upgrade(version) do
+    app_name = Upward.Releases.app_name()
+
     with {:ok, version} <- Upward.Releases.set_unpacked(version),
          :ok <- Upward.Releases.install_release(version),
+         # This is the env after the release is installed (Erlang called config_change) (Runtime configuration is not yet applied)
+         release_env <- Application.get_all_env(app_name),
          # Ensure runtime configuration is loaded
          :ok <- Config.Provider.boot(),
          :ok <- Upward.Releases.make_permanent(version) do
+      # This is the env after runtime configuration is applied
+      {changed, new, removed} = Upward.Config.diff(app_name, release_env)
+      {module, _} = Application.spec(app_name, :mod)
+      module.config_change(changed, new, removed)
       IO.puts(IO.ANSI.green() <> "Upgraded to #{version}" <> IO.ANSI.reset())
     else
       {:error, error} ->

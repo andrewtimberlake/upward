@@ -30,6 +30,15 @@ defmodule Upward.Utils do
     patch_release?(v1, parse_version(v2))
   end
 
+  def is_base_patch?(%Version{patch: 0}), do: true
+  def is_base_patch?(%Version{}), do: false
+
+  def is_base_patch?(version) when is_binary(version) do
+    version
+    |> Version.parse!()
+    |> is_base_patch?()
+  end
+
   def parse_version(%Version{} = version), do: version
 
   def parse_version(version) when is_binary(version) do

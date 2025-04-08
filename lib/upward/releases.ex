@@ -1,51 +1,44 @@
 Code.ensure_loaded?(:release_handler)
 
 defmodule Upward.Releases do
-  @behaviour Config.Provider
-
-  @impl Config.Provider
-  def init(opts), do: opts
-
-  @impl Config.Provider
-  def load(config, {app_name, version}) do
-    version = Version.parse!(version)
-
-    case version do
-      %Version{patch: 0} ->
-        IO.puts(
-          IO.ANSI.green() <> "Making RELEASES file for #{app_name} #{version}" <> IO.ANSI.reset()
-        )
-
-        make_releases(app_name, version)
-
-      _ ->
-        nil
-    end
-
-    config
-  end
-
   def app_name do
     {:ok, _} = Application.ensure_all_started(:sasl)
     [{name, _vsn, _, _}] = :release_handler.which_releases(:permanent)
     String.to_existing_atom(to_string(name))
   end
 
-  def make_releases(app_name, version) do
+  def current_version do
+    [{_name, vsn, _, _}] = :release_handler.which_releases(:permanent)
+    Upward.Utils.parse_version(vsn)
+  end
+
+  def make_releases_file(app_name, version, path \\ File.cwd!())
+
+  def make_releases_file(app_name, %Version{patch: 0} = version, path) do
     version = Upward.Utils.parse_version(version)
 
     {:ok, _} = Application.ensure_all_started(:sasl)
 
-    path = File.cwd!()
     releases_path = Path.join(path, "releases")
 
     :ok =
       :release_handler.create_RELEASES(
-        String.to_charlist(path),
+        # If we don’t provide a root path, then the release file contains relative paths to the libs which is what we
+        # need for a RELEASES file generated during release (on build machine) rather then during install (on target machine)
+        "",
         String.to_charlist(releases_path),
         String.to_charlist(Path.join(releases_path, "#{version}/#{app_name}.rel")),
         []
       )
+  end
+
+  def make_releases_file(_app_name, %Version{}, _path) do
+    :ok
+  end
+
+  def make_releases_file(app_name, version, path) do
+    version = Upward.Utils.parse_version(version)
+    make_releases_file(app_name, version, path)
   end
 
   def set_unpacked(version) do

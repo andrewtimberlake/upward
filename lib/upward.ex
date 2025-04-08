@@ -2,28 +2,62 @@ defmodule Upward do
   alias Upward.Appup
 
   # TODO: Add checks to see if the release is already installed, unpacked, permanent, etc
-  # TODO: Maybe rename this to cover change in any version direction
   # TODO: Check that there is a relup and appup for the transition (i.e. you con’t move from 1.0.0 to 1.0.2, but need to move through 1.0.1)
-  def upgrade(version) do
+  def install(new_version) do
     app_name = Upward.Releases.app_name()
+    current_version = Upward.Releases.current_version()
 
-    with {:ok, version} <- Upward.Releases.set_unpacked(version),
-         :ok <- Upward.Releases.install_release(version),
+    with {:ok, new_version} <- Upward.Releases.set_unpacked(new_version),
+         :ok <- Upward.Releases.install_release(new_version),
          # This is the env after the release is installed (Erlang called config_change) (Runtime configuration is not yet applied)
          release_env <- Application.get_all_env(app_name),
          # Ensure runtime configuration is loaded
          :ok <- Config.Provider.boot(),
-         :ok <- Upward.Releases.make_permanent(version) do
+         :ok <- Upward.Releases.make_permanent(new_version) do
       # This is the env after runtime configuration is applied
       {changed, new, removed} = Upward.Config.diff(app_name, release_env)
       {module, _} = Application.spec(app_name, :mod)
       module.config_change(changed, new, removed)
-      IO.puts(IO.ANSI.green() <> "Upgraded to #{version}" <> IO.ANSI.reset())
+
+      up_down =
+        if(Version.compare(current_version, new_version) == :gt,
+          do: "Downgraded",
+          else: "Upgraded"
+        )
+
+      IO.puts(IO.ANSI.green() <> "#{up_down} to #{new_version}" <> IO.ANSI.reset())
     else
       {:error, error} ->
         IO.puts(
-          IO.ANSI.red() <> "* Error installing #{version}: #{inspect(error)}" <> IO.ANSI.reset()
+          IO.ANSI.red() <>
+            "* Error installing #{new_version}: #{inspect(error)}" <> IO.ANSI.reset()
         )
+    end
+  end
+
+  def upgrade(new_version) do
+    current_version = Upward.Releases.current_version()
+
+    if Version.compare(current_version, new_version) == :lt do
+      install(new_version)
+    else
+      IO.puts(
+        IO.ANSI.red() <>
+          "Cannot upgrade to #{new_version} from #{current_version}" <> IO.ANSI.reset()
+      )
+    end
+  end
+
+  def downgrade(new_version) do
+    current_version = Upward.Releases.current_version()
+
+    if Version.compare(current_version, new_version) == :gt do
+      install(new_version)
+    else
+      IO.puts(
+        IO.ANSI.red() <>
+          "Cannot downgrade to #{new_version} from #{current_version}" <> IO.ANSI.reset()
+      )
     end
   end
 
@@ -46,15 +80,7 @@ defmodule Upward do
     end)
   end
 
-  def prepare(%Mix.Release{name: app_name, version: version} = release) do
-    %{config_providers: config_providers} = release
-    config_providers = [{Upward.Releases, {app_name, version}} | config_providers]
-    %{release | config_providers: config_providers}
-  end
-
   def auto_appup(%Mix.Release{name: app_name, version: version, path: path} = release, opts \\ []) do
-    # TODO: Check if the config provider is added and warn about adding &Upward.prepare/1 to the release config
-
     # Get the latest previous release
     previous_release_path =
       Path.wildcard(Path.join(path, "releases/*"))
@@ -90,7 +116,7 @@ defmodule Upward do
                 :io_lib.format(~c"~tp.~n", [appup])
               )
 
-              Upward.Relup.make(release, previous_version)
+              _relup_path = Upward.Relup.make(release, previous_version)
 
             error ->
               IO.puts(
@@ -105,12 +131,16 @@ defmodule Upward do
           )
         end
       else
+        :ok = Upward.Releases.make_releases_file(app_name, version, path)
+
         IO.puts(
           IO.ANSI.yellow() <>
             "* not a patch release, skipping appup" <> IO.ANSI.reset()
         )
       end
     else
+      :ok = Upward.Releases.make_releases_file(app_name, version, path)
+
       IO.puts(
         IO.ANSI.yellow() <>
           "* no previous release found, skipping appup" <> IO.ANSI.reset()

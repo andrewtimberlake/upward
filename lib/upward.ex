@@ -107,6 +107,9 @@ defmodule Upward do
               be_quiet? || echo("* Generating relup file", IO.ANSI.green())
               _relup_path = Upward.Relup.make(release, previous_version)
 
+              # We don’t want an existing RELEASES file to be included in a patch
+              Upward.Releases.remove_releases_file(path)
+
             error ->
               be_quiet? || echo("* unable to generate appup: #{inspect(error)}", IO.ANSI.red())
           end

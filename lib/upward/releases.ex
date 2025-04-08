@@ -41,6 +41,15 @@ defmodule Upward.Releases do
     make_releases_file(app_name, version, path)
   end
 
+  def remove_releases_file(path \\ File.cwd!()) do
+    releases_path = Path.join(path, "releases/RELEASES")
+
+    if File.exists?(releases_path) do
+      IO.puts("Removing #{releases_path}")
+      File.rm_rf!(releases_path)
+    end
+  end
+
   def set_unpacked(version) do
     app_name = app_name()
     path = File.cwd!()

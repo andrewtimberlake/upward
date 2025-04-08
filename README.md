@@ -35,6 +35,10 @@ Without hot-code upgrades, Phoenix LiveView applications will have to reconnect 
 
 By using upward, you can minimise discruptions, especially for long-running sessions.
 
+## Demo
+
+You can see a demo of Upward in action [here](https://upward.andrewtimberlake.com).
+
 ## Usage
 
 Add `&Upward.auto_appup/1` to your release steps in `mix.exs`.

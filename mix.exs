@@ -2,7 +2,7 @@ defmodule Upward.MixProject do
   use Mix.Project
 
   @github_url "https://github.com/andrewtimberlake/upward"
-  @version "0.0.5"
+  @version "0.0.6"
 
   def project do
     [

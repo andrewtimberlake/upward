@@ -1,6 +1,13 @@
 Code.ensure_loaded?(:systools)
 
 defmodule Upward.Relup do
+  @moduledoc """
+  A utility module for managing relup files.
+  """
+
+  @doc """
+  Make a relup file between two versions.
+  """
   def make(%Mix.Release{name: app_name, version: version, path: path}, previous_version) do
     current_relup_path = Path.join(path, "releases/#{version}/#{app_name}")
 

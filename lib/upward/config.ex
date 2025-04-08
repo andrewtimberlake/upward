@@ -1,4 +1,8 @@
 defmodule Upward.Config do
+  @moduledoc """
+  A utility module for managing the configuration of an application.
+  """
+
   @doc """
   Returns a tuple with the new config, the changed config, and the removed config.
   new - config with a key that is not in the previous config

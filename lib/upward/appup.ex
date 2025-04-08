@@ -1,7 +1,33 @@
 # Initial file from https://github.com/bitwalker/distillery/blob/master/lib/distillery/releases/appups.ex
 defmodule Upward.Appup do
+  @moduledoc """
+  This module is responsible for generating appup files for changes between two versions of an application.
+  """
+
   alias Upward.Appup.Transform
 
+  @type app :: atom
+  @type version_str :: String.t()
+  @type appup_ver :: charlist | binary
+  @type change :: :soft | {:advanced, [term]}
+  @type dep_mods :: [module]
+  @type instruction ::
+          {:add_module, module}
+          | {:delete_module, module}
+          | {:update, module, :supervisor | change}
+          | {:update, module, change, dep_mods}
+          | {:load_module, module}
+          | {:load_module, module, dep_mods}
+          | {:apply, {module, atom, [term]}}
+          | {:add_application, atom}
+          | {:remove_application, atom}
+          | {:restart_application, atom}
+          | :restart_new_emulator
+          | :restart_emulator
+
+  @doc """
+  Generate an appup file for changes between two versions of an application.
+  """
   def make(application, v1, v2, v1_path, v2_path, transforms \\ []) do
     v1_dotapp =
       v1_path

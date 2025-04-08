@@ -14,8 +14,25 @@ defmodule Upward.Transformers.PhoenixLiveViewTransformer do
   end
   ```
 
-  `old_vsn` will be the previous version of the Channel (not the LiveView) and `{down: old_vsn}` during a downgrade.
+  `old_vsn` will be the previous version of the Channel (**not the LiveView**) and `{down: old_vsn}` during a downgrade.
   Because the version is the version of the Channel, you should implement your own version tracking within the socket private or assigns.
+
+  Add this transform to the auto_appup step in your release config
+
+  ```elixir
+  def releases do
+    [
+      my_app: [
+        include_executables_for: [:unix],
+        steps: [
+          :assemble,
+          &Upward.auto_appup(&1, transforms: [Upward.Transformers.PhoenixLiveViewTransformer]),
+          :tar
+        ]
+      ]
+    ]
+  end
+  ```
   """
 
   def up(_app, _v1, _v2, instructions, _opts) do

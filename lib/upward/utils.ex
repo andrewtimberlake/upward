@@ -1,4 +1,11 @@
 defmodule Upward.Utils do
+  @moduledoc """
+  General utility functions.
+  """
+
+  @doc """
+  Finds the previous release path within the build directory.
+  """
   def previous_release_path(paths, current_version) do
     paths
     |> Enum.map(fn path ->
@@ -11,6 +18,17 @@ defmodule Upward.Utils do
     |> List.first()
   end
 
+  @doc """
+  Checks if the difference between two versions is a patch release.
+
+  Examples:
+      Upward.Utils.patch_release?("1.0.0", "1.0.1")
+      iex> true
+
+      Upward.Utils.patch_release?("1.0.0", "1.1.0")
+      iex> false
+
+  """
   def patch_release?(
         %Version{major: major, minor: minor},
         %Version{major: major, minor: minor}
@@ -30,6 +48,18 @@ defmodule Upward.Utils do
     patch_release?(v1, parse_version(v2))
   end
 
+  @doc """
+  Checks if a version is a base patch version.
+
+  Base patch versions are versions that have a patch number of 0.
+
+  Examples:
+      Upward.Utils.is_base_patch?("1.0.0")
+      iex> true
+
+      Upward.Utils.is_base_patch?("1.0.1")
+      iex> false
+  """
   def is_base_patch?(%Version{patch: 0}), do: true
   def is_base_patch?(%Version{}), do: false
 
@@ -39,6 +69,13 @@ defmodule Upward.Utils do
     |> is_base_patch?()
   end
 
+  @doc """
+  Parses a version string into a Version struct.
+
+  Examples:
+      Upward.Utils.parse_version("1.0.0")
+      iex> %Version{major: 1, minor: 0, patch: 0}
+  """
   def parse_version(%Version{} = version), do: version
 
   def parse_version(version) when is_binary(version) do

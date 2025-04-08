@@ -12,6 +12,24 @@ defmodule Upward.Releases do
     Upward.Utils.parse_version(vsn)
   end
 
+  def next_version(%Version{patch: patch} = current_version \\ current_version()) do
+    %{current_version | patch: patch + 1}
+  end
+
+  def previous_version() do
+    case current_version() do
+      %Version{patch: 0} ->
+        {:error, "Cannot downgrade past the first patch version"}
+
+      current_version ->
+        releases()
+        |> Enum.map(&elem(&1, 0))
+        |> Enum.find(fn vsn ->
+          Version.compare(vsn, current_version) == :lt
+        end) || {:error, "No previous version found"}
+    end
+  end
+
   def make_releases_file(app_name, version, path \\ File.cwd!())
 
   def make_releases_file(app_name, %Version{patch: 0} = version, path) do
@@ -115,7 +133,7 @@ defmodule Upward.Releases do
   def releases do
     :release_handler.which_releases()
     |> Enum.map(fn {_, vsn, _, status} ->
-      {to_string(vsn), status}
+      {Upward.Utils.parse_version(vsn), status}
     end)
   end
 end

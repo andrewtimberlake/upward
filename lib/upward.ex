@@ -27,28 +27,25 @@ defmodule Upward do
 
       echo("#{up_down} to #{new_version}", IO.ANSI.green())
     else
-      {:error, error} ->
-        echo("Error installing #{new_version}: #{inspect(error)}", IO.ANSI.red())
+      {:error, msg} = error ->
+        echo("Error installing #{new_version}: #{inspect(msg)}", IO.ANSI.red())
+        error
     end
   end
 
-  def upgrade(new_version) do
-    current_version = Upward.Releases.current_version()
-
-    if Version.compare(current_version, new_version) == :lt do
-      install(new_version)
-    else
-      echo("Cannot upgrade to #{new_version} from #{current_version}", IO.ANSI.red())
-    end
+  def upgrade() do
+    new_version = Upward.Releases.next_version()
+    install(new_version)
   end
 
-  def downgrade(new_version) do
-    current_version = Upward.Releases.current_version()
+  def downgrade() do
+    case Upward.Releases.previous_version() do
+      {:error, msg} = error ->
+        echo("Error downgrading: #{inspect(msg)}", IO.ANSI.red())
+        error
 
-    if Version.compare(current_version, new_version) == :gt do
-      install(new_version)
-    else
-      echo("Cannot downgrade to #{new_version} from #{current_version}", IO.ANSI.red())
+      new_version ->
+        install(new_version)
     end
   end
 
@@ -58,12 +55,14 @@ defmodule Upward do
     max_width =
       releases
       |> Enum.map(&elem(&1, 0))
+      |> Enum.map(&to_string/1)
       |> Enum.map(&String.length/1)
       |> Enum.max()
 
     releases
-    |> Enum.sort_by(fn {vsn, _status} -> vsn end)
+    |> Enum.sort_by(fn {vsn, _status} -> vsn end, Version)
     |> Enum.each(fn {vsn, status} ->
+      vsn = to_string(vsn)
       echo(" #{String.pad_leading(vsn, max_width)} #{status}", IO.ANSI.cyan())
     end)
   end

@@ -17,7 +17,7 @@ defmodule Upward.MixProject do
         [
           source_ref: "#{@version}",
           canonical: "http://hexdocs.pm/upward",
-          main: "README",
+          main: "readme",
           source_url: @github_url,
           extras: ["README.md"]
         ]

@@ -2,8 +2,6 @@ Code.ensure_loaded?(:systools)
 
 defmodule Upward.Relup do
   def make(%Mix.Release{name: app_name, version: version, path: path}, previous_version) do
-    IO.puts(IO.ANSI.green() <> "* Generating relup file" <> IO.ANSI.reset())
-
     current_relup_path = Path.join(path, "releases/#{version}/#{app_name}")
 
     previous_relup_path = Path.join(path, "releases/#{previous_version}/#{app_name}")

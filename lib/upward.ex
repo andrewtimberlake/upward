@@ -25,13 +25,10 @@ defmodule Upward do
           else: "Upgraded"
         )
 
-      IO.puts(IO.ANSI.green() <> "#{up_down} to #{new_version}" <> IO.ANSI.reset())
+      echo("#{up_down} to #{new_version}", IO.ANSI.green())
     else
       {:error, error} ->
-        IO.puts(
-          IO.ANSI.red() <>
-            "* Error installing #{new_version}: #{inspect(error)}" <> IO.ANSI.reset()
-        )
+        echo("Error installing #{new_version}: #{inspect(error)}", IO.ANSI.red())
     end
   end
 
@@ -41,10 +38,7 @@ defmodule Upward do
     if Version.compare(current_version, new_version) == :lt do
       install(new_version)
     else
-      IO.puts(
-        IO.ANSI.red() <>
-          "Cannot upgrade to #{new_version} from #{current_version}" <> IO.ANSI.reset()
-      )
+      echo("Cannot upgrade to #{new_version} from #{current_version}", IO.ANSI.red())
     end
   end
 
@@ -54,10 +48,7 @@ defmodule Upward do
     if Version.compare(current_version, new_version) == :gt do
       install(new_version)
     else
-      IO.puts(
-        IO.ANSI.red() <>
-          "Cannot downgrade to #{new_version} from #{current_version}" <> IO.ANSI.reset()
-      )
+      echo("Cannot downgrade to #{new_version} from #{current_version}", IO.ANSI.red())
     end
   end
 
@@ -73,14 +64,13 @@ defmodule Upward do
     releases
     |> Enum.sort_by(fn {vsn, _status} -> vsn end)
     |> Enum.each(fn {vsn, status} ->
-      IO.puts(
-        IO.ANSI.cyan() <>
-          " #{String.pad_leading(vsn, max_width)} #{status}" <> IO.ANSI.reset()
-      )
+      echo(" #{String.pad_leading(vsn, max_width)} #{status}", IO.ANSI.cyan())
     end)
   end
 
   def auto_appup(%Mix.Release{name: app_name, version: version, path: path} = release, opts \\ []) do
+    be_quiet? = Keyword.get(release.options, :quiet, false)
+
     # Get the latest previous release
     previous_release_path =
       Path.wildcard(Path.join(path, "releases/*"))
@@ -90,9 +80,7 @@ defmodule Upward do
     if previous_release_path do
       previous_version = Path.basename(previous_release_path)
 
-      IO.puts(
-        IO.ANSI.yellow() <> "* upgrade from #{previous_version} to #{version}" <> IO.ANSI.reset()
-      )
+      be_quiet? || echo("* upgrade from #{previous_version} to #{version}", IO.ANSI.yellow())
 
       if Upward.Utils.patch_release?(version, previous_version) do
         previous_version_path = Path.join(path, "lib/#{app_name}-#{previous_version}")
@@ -109,44 +97,38 @@ defmodule Upward do
                  Keyword.get(opts, :transforms, [])
                ) do
             {:ok, appup} ->
-              IO.puts(IO.ANSI.green() <> "* writing appup file" <> IO.ANSI.reset())
+              be_quiet? || echo("* writing appup file", IO.ANSI.green())
 
               File.write(
                 Path.join([path, "lib/#{app_name}-#{version}/ebin/#{app_name}.appup"]),
                 :io_lib.format(~c"~tp.~n", [appup])
               )
 
+              be_quiet? || echo("* Generating relup file", IO.ANSI.green())
               _relup_path = Upward.Relup.make(release, previous_version)
 
             error ->
-              IO.puts(
-                IO.ANSI.red() <>
-                  "* unable to generate appup: #{inspect(error)}" <> IO.ANSI.reset()
-              )
+              be_quiet? || echo("* unable to generate appup: #{inspect(error)}", IO.ANSI.red())
           end
         else
-          IO.puts(
-            IO.ANSI.yellow() <>
-              "* previous version path does not exist, skipping appup" <> IO.ANSI.reset()
-          )
+          be_quiet? ||
+            echo("* previous version path does not exist, skipping appup", IO.ANSI.yellow())
         end
       else
         :ok = Upward.Releases.make_releases_file(app_name, version, path)
 
-        IO.puts(
-          IO.ANSI.yellow() <>
-            "* not a patch release, skipping appup" <> IO.ANSI.reset()
-        )
+        be_quiet? || echo("* not a patch release, skipping appup", IO.ANSI.yellow())
       end
     else
       :ok = Upward.Releases.make_releases_file(app_name, version, path)
 
-      IO.puts(
-        IO.ANSI.yellow() <>
-          "* no previous release found, skipping appup" <> IO.ANSI.reset()
-      )
+      be_quiet? || echo("* no previous release found, skipping appup", IO.ANSI.yellow())
     end
 
     release
+  end
+
+  defp echo(message, color) do
+    IO.puts(color <> message <> IO.ANSI.reset())
   end
 end

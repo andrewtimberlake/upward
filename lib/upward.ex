@@ -30,8 +30,8 @@ defmodule Upward do
          :ok <- Upward.Releases.install_release(new_version),
          # This is the env after the release is installed (Erlang called config_change) (Runtime configuration is not yet applied)
          release_env <- Application.get_all_env(app_name),
-         # Ensure runtime configuration is loaded
-         :ok <- Config.Provider.boot(),
+         # Ensure runtime configuration is loaded (If no runtime configuration is provided, it will skip)
+         boot_result when boot_result in [:ok, :skip] <- Config.Provider.boot(),
          :ok <- Upward.Releases.make_permanent(new_version) do
       # This is the env after runtime configuration is applied
       {changed, new, removed} = Upward.Config.diff(app_name, release_env)
